@@ -1,0 +1,24 @@
+{
+  "name": "bank_webhook_handler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  
+    "scripts": {
+      "dev": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js  & node dist/index.js"
+    },
+  
+  
+  "type": "commonjs",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0",
+    "@repo/prisma": "*"
+  }
+}

@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String?  @unique
+  name        String? 
+  number      String  @unique
+  password    String
+  balance     Balance[]
+  onRampTransactions OnRampTransaction[]     
+
+  sentP2PTransactions P2PTransaction[] @relation("sentP2PTransactions")
+  receivedP2PTransactions P2PTransaction[] @relation("receivedP2PTransactions")
+  imageUrl  String? 
+
+  friends User[] @relation("friends")
+  friendsof User[] @relation("friends")
+
+
+}
+
+model Merchant {
+  id          Int     @id @default(autoincrement())
+  email       String  @unique
+  name        String?
+  auth_type   AuthType   
+}
+
+model OnRampTransaction {
+  id        Int          @id @default(autoincrement())
+  status    OnRampStatus
+  token     String       @unique
+  provider  String
+  amount    Int
+  startTime DateTime
+  userNumber   String
+  user      User         @relation(fields: [userNumber], references: [number])
+  @@index([startTime])
+}
+model P2PTransaction {
+  id        Int          @id @default(autoincrement())
+  status    OnRampStatus
+  token     String       @unique
+  
+  amount    Int
+  startTime DateTime
+  sentuserNumber    String
+  note String?
+  receiveduserNumber    String
+  sentuser      User         @relation("sentP2PTransactions",fields: [sentuserNumber], references: [number])
+  receiveduser      User         @relation("receivedP2PTransactions",fields: [receiveduserNumber], references: [number])
+  
+  @@index([startTime])
+}
+
+
+model Balance {
+  id     Int  @id @default(autoincrement())
+  userNumber String  @unique
+  amount Int
+  locked Int
+  user  User @relation(fields: [userNumber], references: [number])
+
+}
+
+enum AuthType {
+  Google
+  Github
+}
+
+enum OnRampStatus {
+  Success
+  Failure
+  Processing
+}

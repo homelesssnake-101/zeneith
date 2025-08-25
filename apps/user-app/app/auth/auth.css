@@ -1,0 +1,125 @@
+/* ./auth.css */
+
+/* Import the Inter font for a clean, modern look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* 1. THEME & COLOR PALETTE (Light Theme)
+   - All colors are defined as CSS variables for easy theming.
+*/
+:root {
+  /* Base Colors */
+  --background: 0 0% 100%; /* White */
+  --foreground: 240 10% 3.9%; /* Dark Gray for text */
+  
+  /* Card & UI Element Colors */
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  
+  /* Primary Accent Colors (Indigo/Purple Gradient) - Unchanged */
+  --primary: 262.1 83.3% 57.8%; 
+  --primary-foreground: 210 20% 98%; 
+  
+  /* Secondary Accent Colors */
+  --secondary: 240 4.8% 95.9%; /* Light Gray */
+  --secondary-foreground: 240 5.9% 10%; /* Dark Gray */
+
+  /* Muted Colors for less important text and elements */
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%; /* Medium Gray */
+
+  /* Accent Color (for gradients and highlights) - Unchanged */
+  --accent: 263.4 70% 50.4%; 
+  --accent-foreground: 210 20% 98%;
+
+  /* Borders & Rings */
+  --border: 240 5.9% 90%; /* Light Gray Border */
+  --input: 240 5.9% 90%;
+  --ring: 262.1 83.3% 57.8%;
+
+  /* Radius for rounded corners */
+  --radius: 0.75rem;
+}
+
+/* Apply the light theme by default */
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+
+/* 2. BASE & TYPOGRAPHY STYLES
+   - Sets the default font and ensures smooth scrolling.
+*/
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. UTILITY CLASSES
+   - These classes map our CSS variables to the class names used in your React component.
+*/
+.bg-background { background-color: hsl(var(--background)); }
+.text-foreground { color: hsl(var(--foreground)); }
+.text-primary { color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.bg-gradient-primary {
+  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+}
+.text-muted-foreground { color: hsl(var(--muted-foreground)); }
+.border-border { border-color: hsl(var(--border)); }
+.bg-gradient-secondary { background-color: hsl(var(--secondary)); }
+
+
+/* 4. CUSTOM COMPONENT STYLES
+   - Enhances the look of your custom components like PrimaryButton.
+*/
+.PrimaryButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  font-weight: 700;
+  color: hsl(var(--primary-foreground));
+  padding: 0.875rem 1.5rem;
+  border-radius: 9999px;
+  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+  box-shadow: 0 4px 15px hsla(var(--primary), 0.2);
+  transition: all 0.3s ease;
+  transform: scale(1);
+}
+
+.PrimaryButton:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px hsla(var(--primary), 0.3);
+}
+
+.PrimaryButton:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 10px hsla(var(--primary), 0.2);
+}
+
+/* 5. GLOBAL ENHANCEMENTS
+   - Adds a custom scrollbar for a polished feel.
+*/
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background) / 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+}
