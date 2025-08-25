@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import {Suspense} from 'react';
 
 // This is the same Logo component from your AuthPage.
 // You would typically import this from a shared components directory.
@@ -17,6 +18,7 @@ const Logo = ({ className } : {className: string}) => (
 
 // The main error page component.
 export default function AuthErrorPage() {
+
 
     const searchParams = useSearchParams();
     const errorType = searchParams.get("error")||"default";
@@ -34,6 +36,7 @@ export default function AuthErrorPage() {
     const { title , message } = errorMessages[errorType as keyof typeof errorMessages] || errorMessages.default!;
 
     return (
+        <Suspense fallback={<div>Loading...</div>}>
         <div className="min-h-screen bg-white lg:flex lg:items-center lg:justify-center font-sans">
             <div className="min-h-screen lg:min-h-0 grid grid-cols-1 lg:grid-cols-2 max-w-6xl w-full bg-white lg:rounded-3xl lg:shadow-2xl overflow-hidden">
                 {/* Left Side: Error Message and Action */}
@@ -74,5 +77,6 @@ export default function AuthErrorPage() {
                 </div>
             </div>
         </div>
+        </Suspense>
     );
 }
