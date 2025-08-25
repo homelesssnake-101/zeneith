@@ -17,7 +17,17 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: gnerate prisma client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: cd packages/prisma && npm run generate --no-engine && cd ../..
       - name: Run Build
+        env:
+            NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+            NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+            NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXTAUTH_GOOGLE_CLIENT_ID: ${{ secrets.NEXTAUTH_GOOGLE_CLIENT_ID }}
+            NEXTAUTH_GOOGLE_CLIENT_SECRET: ${{ secrets.NEXTAUTH_GOOGLE_CLIENT_SECRET }}
+            
+          
         run: npm run build
-        
