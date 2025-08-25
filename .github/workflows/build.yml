@@ -19,7 +19,7 @@ jobs:
       - name: gnerate prisma client
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: cd packages/prisma && npm run generate --no-engine && cd ../..
+        run: cd packages/prisma && npx prisma generate --no-engine && cd ../..
       - name: Run Build
         env:
             NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -28,6 +28,6 @@ jobs:
             NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
             NEXTAUTH_GOOGLE_CLIENT_ID: ${{ secrets.NEXTAUTH_GOOGLE_CLIENT_ID }}
             NEXTAUTH_GOOGLE_CLIENT_SECRET: ${{ secrets.NEXTAUTH_GOOGLE_CLIENT_SECRET }}
-            
+
           
         run: npm run build
