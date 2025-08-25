@@ -48,7 +48,8 @@ jobs:
         uses: ./docker/build-push-action@v2
         with:
           push: true
-          file: docker/Dockerfile.user-app
+          context: .
+          file: ./docker/Dockerfile.user-app
           tags: ${{ secrets.DOCKER_USERNAME }}/zeneith:latest
 
 
