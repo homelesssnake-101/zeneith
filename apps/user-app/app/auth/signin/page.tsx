@@ -10,8 +10,15 @@ import { PrimaryButton } from "@repo/ui/PrimaryButton";
 import { signIn } from "next-auth/react";
 import { useRouter,useSearchParams } from "next/navigation";
 import {Suspense} from 'react';
+export default function Authwithsuspense() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <AuthPage />
+        </Suspense>
+    );
+}
 
-export default function AuthPage() {
+export  function AuthPage() {
   const [loading,setLoading] = useState<boolean>(false);
 
 
@@ -389,8 +396,6 @@ export default function AuthPage() {
         );
       
         return (
-
-          <Suspense fallback={<div>Loading...</div>}>
          !loading && <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background lg:flex lg:items-center lg:justify-center font-sans relative overflow-hidden">
             {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -569,7 +574,6 @@ export default function AuthPage() {
               </div>
             </motion.div>
           </div>
-          </Suspense>
         );
       }
  
