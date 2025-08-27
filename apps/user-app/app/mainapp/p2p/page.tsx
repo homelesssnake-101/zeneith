@@ -3,7 +3,9 @@ import {SendMoneyCard} from "@repo/ui/Sendmoneycard";
 import { TransactionsCard } from "@repo/ui/TransactionsCard";
 import { useState,useEffect } from "react";
 import { addFriend,getTransactions } from "../../../actions/p2p";
-;
+import { useDispatch, useSelector } from "react-redux";
+import {setFriends } from "@repo/redux/slices/friendssclice";
+
 
 import axios from "axios";
 
@@ -15,6 +17,7 @@ export default function P2P() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState<string>('');
+    const dispatch = useDispatch(); 
     const mobileRowSpan =
   people.length === 0 || people.length <= 2 ? "max-sm:row-span-3":
   people.length <4 ? "max-sm:row-span-4"
@@ -40,6 +43,7 @@ useEffect(() => {
         setLoading(true);
         const fx = async () => {
             const friends = await axios.get(`/api/p2p/friends`).then(res => res.data);
+            dispatch(setFriends(friends));
             setPeople(friends as any[]);
             setLoading(false);
         };

@@ -28,10 +28,34 @@ model User {
   receivedP2PTransactions P2PTransaction[] @relation("receivedP2PTransactions")
   imageUrl  String? 
 
+  sentchats chats[] @relation("sentchats")
+  receivedchats chats[] @relation("receivedchats")
+
   friends User[] @relation("friends")
   friendsof User[] @relation("friends")
 
 
+}
+
+enum ChatType {
+  text
+  image
+}
+
+model chats{
+  id Int @id @default(autoincrement())
+  sendernumber String 
+  sender User @relation("sentchats",fields: [sendernumber], references: [number])
+  receivernumber String
+  receiver User @relation("receivedchats",fields: [receivernumber], references: [number])
+  message String?
+  imageUrl String?
+  imageCaption String?
+  type ChatType @default(text)
+  timestamp DateTime @default(now())
+  delivered Boolean @default(false)
+  
+  @@index([sendernumber, receivernumber,timestamp])
 }
 
 model Merchant {
