@@ -4,6 +4,7 @@ import {PersonListItem} from "./PersonListItem";
 import { Search } from "lucide-react";
 import { useState,useEffect } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
 
 
 
@@ -26,7 +27,10 @@ useEffect(() => {
         }
         
     }, 500);
-    return () => clearTimeout(debounce);
+    return () =>{
+        clearTimeout(debounce);
+        
+    };
     
 }, [query]);    
     return (
@@ -60,6 +64,7 @@ useEffect(() => {
                         
                         <PersonListItem
                         setRefresh={setRefresh}
+                
                             key={person.id}
                             person={person}
                             onAddFriend={onAddFriend}

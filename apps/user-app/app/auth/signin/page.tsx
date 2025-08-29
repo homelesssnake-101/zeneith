@@ -172,12 +172,12 @@ export  function AuthPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <PrimaryButton onClick={ () => {
+              <PrimaryButton onClick={async () => {
                 if (authMode === 'signUp') {
                   setSetupStep(1);
                 } else {
                   signIn('credentials', {callbackUrl:"/mainapp/user", phone: String(formData.phone), password: String(formData.password) });
-
+              
               }}}>
                 {authMode === 'signUp' ? "Create Account" : "Sign In"}
               </PrimaryButton>

@@ -1,164 +1,157 @@
-// prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { nanoid } from "nanoid";
 
 const prisma = new PrismaClient();
 
+// Helper to generate a realistic 10-digit Indian mobile number
 function randomIndianNumber(): string {
-  // realistic 10-digit Indian mobile starting with 6-9
-  const first = String(Math.floor(Math.random() * 4) + 6); // 6..9
-  let rest = "";
-  for (let i = 0; i < 9; i++) rest += Math.floor(Math.random() * 10).toString();
-  return first + rest;
+  const firstDigit = String(Math.floor(Math.random() * 4) + 6); // Starts with 6, 7, 8, or 9
+  const rest = Array.from({ length: 9 }, () =>
+    Math.floor(Math.random() * 10)
+  ).join("");
+  return firstDigit + rest;
 }
 
-async function generateUniqueNumbers(count: number) {
-  const set = new Set<string>();
-  while (set.size < count) {
-    set.add(randomIndianNumber());
+// Helper to generate a specified count of unique numbers
+async function generateUniqueNumbers(count: number): Promise<string[]> {
+  const numbers = new Set<string>();
+  while (numbers.size < count) {
+    numbers.add(randomIndianNumber());
   }
-  return Array.from(set);
+  return Array.from(numbers);
+}
+
+// Helper to format the current time as a string (e.g., "11:30 AM")
+function formatTime(date: Date): string {
+    return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
 }
 
 async function main() {
-  console.log("Seeding DB...");
+  console.log("🌱 Starting database seed...");
 
+  // 1. Clean up existing data to ensure a fresh start
+  console.log("🧹 Clearing old data...");
+  await prisma.chats.deleteMany({});
   await prisma.p2PTransaction.deleteMany({});
   await prisma.onRampTransaction.deleteMany({});
   await prisma.balance.deleteMany({});
   await prisma.merchant.deleteMany({});
   await prisma.user.deleteMany({});
 
-  // 1) Generate 10 unique realistic Indian numbers
-  const numbers = await generateUniqueNumbers(10);
-  console.log("Numbers:", numbers);
-
-  // 2) Create users with hashed password
+  // 2. Create users
+  const userCount = 10;
+  const numbers = await generateUniqueNumbers(userCount);
   const seedPassword = "Password123!";
-  const hashed = await bcrypt.hash(seedPassword, 10);
+  const hashedPassword = await bcrypt.hash(seedPassword, 10);
 
-  const users: { id: number; number: string }[] = [];
-
-  for (let i = 0; i < numbers.length; i++) {
-    const num = numbers[i];
-    if (!num) continue; // satisfy TS when noUncheckedIndexedAccess is enabled
-    const data = {
-      email: `user${i + 1}@example.com`,
-      name: `User ${i + 1}`,
-      number: num,
-      password: hashed,
-    };
-
-    const u = await prisma.user.create({ data });
-    users.push({ id: u.id, number: u.number });
-  }
-  console.log("Created users:", users.length);
-
-  // 3) Create balances for each user
-  for (const u of users) {
-    const amount = Math.floor(Math.random() * 19001) + 1000; // 1k..20k
-    await prisma.balance.create({
-      data: {
-        userNumber: u.number,
-        amount,
-        locked: 0,
-      },
-    });
-  }
-  console.log("Balances created");
-
-  // 4) Create merchants
-  await prisma.merchant.createMany({
-    data: [
-      { email: "merchant1@example.com", name: "Merchant One", auth_type: "Google" },
-      { email: "merchant2@example.com", name: "Merchant Two", auth_type: "Github" },
-    ],
-  });
-
-  // 5) Create some on-ramp transactions
-  for (let i = 0; i < Math.min(3, users.length); i++) {
-    const u = users[i];
-    if (!u) continue;
-    await prisma.onRampTransaction.create({
-      data: {
-        status: "Success",
-        token: `onramp-${Date.now()}-${i}`,
-        provider: "Razorpay",
-        amount: Math.floor(Math.random() * 10000) + 500,
-        startTime: new Date(),
-        userNumber: u.number,
-      },
-    });
-  }
-  console.log("OnRamp created");
-
-  // 6) Create P2P transactions and adjust balances inside transaction to avoid partial updates
-  // We'll create 6 p2p transfers using safe interactive transaction logic
-  for (let i = 0; i < 6; i++) {
-    // pick distinct sender and receiver
-    const fromIdx = Math.floor(Math.random() * users.length);
-    let toIdx = Math.floor(Math.random() * users.length);
-    while (toIdx === fromIdx) toIdx = Math.floor(Math.random() * users.length);
-
-    const from = users[fromIdx];
-    const to = users[toIdx];
-    if (!from || !to) continue;
-    const fromNum = from.number;
-    const toNum = to.number;
-
-    // fetch current balance to pick a safe transfer amount (<= 30% of balance)
-    const fromBal = await prisma.balance.findUnique({ where: { userNumber: fromNum } });
-    const safeMax = Math.max(1, Math.floor(((fromBal?.amount ?? 1000) * 0.3)));
-    const amount = Math.floor(Math.random() * safeMax) + 1;
-
-    // interactive transaction with FOR UPDATE locking to avoid race in real scenarios
-    await prisma.$transaction(async (tx) => {
-      // Lock rows in deterministic order (by userNumber string) to avoid deadlocks
-      const lockFirst = fromNum < toNum ? fromNum : toNum;
-      const lockSecond = fromNum < toNum ? toNum : fromNum;
-
-      // parameterized raw queries (safe from injection because we use template tags)
-      await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userNumber" = ${lockFirst} FOR UPDATE`;
-      await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userNumber" = ${lockSecond} FOR UPDATE`;
-
-      // re-read balances inside tx
-      const sender = await tx.balance.findUnique({ where: { userNumber: fromNum } });
-      if (!sender || sender.amount < amount) {
-        // bail out early - throw to rollback
-        throw new Error("Insufficient funds in seed P2P creation");
-      }
-
-      await tx.balance.update({
-        where: { userNumber: fromNum },
-        data: { amount: { decrement: amount } },
-      });
-
-      await tx.balance.update({
-        where: { userNumber: toNum },
-        data: { amount: { increment: amount } },
-      });
-
-      await tx.p2PTransaction.create({
+  const createdUsers = await Promise.all(
+    numbers.map((number, i) =>
+      prisma.user.create({
         data: {
-          status: "Success",
-          token: `p2p-${Date.now()}-${i}-${Math.floor(Math.random() * 10000)}`,
-          amount,
-          startTime: new Date(),
-          sentuserNumber: fromNum,
-          receiveduserNumber: toNum,
+          number,
+          email: `user${i + 1}@example.com`,
+          name: `User ${i + 1}`,
+          password: hashedPassword,
+          imageUrl: `https://i.pravatar.cc/150?u=${number}`,
         },
-      });
+      })
+    )
+  );
+  console.log(`👤 Created ${createdUsers.length} users.`);
+
+  // 3. Create a balance for each user
+  await Promise.all(
+    createdUsers.map((user) =>
+      prisma.balance.create({
+        data: {
+          userNumber: user.number,
+          amount: Math.floor(Math.random() * 90000) + 10000, // 10k to 100k
+          locked: 0,
+        },
+      })
+    )
+  );
+  console.log("💰 Created balances for all users.");
+
+  // 4. Create chat conversations
+  console.log("💬 Seeding chat conversations...");
+  if (createdUsers.length >= 4) {
+    const [user1, user2, user3, user4] = createdUsers;
+
+    if (!user1 || !user2 || !user3 || !user4) {
+        console.error("Not enough users were created to seed chats.");
+        return;
+    }
+
+    // Conversation 1: Between User 1 and User 2
+    await prisma.chats.createMany({
+      data: [
+        {
+          id: nanoid(),
+          fromPhone: user1.number,
+          toPhone: user2.number,
+          message: "Hey, how have you been?",
+          status: "seen",
+          type: "text",
+          time: formatTime(new Date(Date.now() - 10 * 60 * 1000)), // 10 mins ago
+        },
+        {
+          id: nanoid(),
+          fromPhone: user2.number,
+          toPhone: user1.number,
+          message: "I'm doing great, thanks! Busy with the new project. You?",
+          status: "seen",
+          type: "text",
+          time: formatTime(new Date(Date.now() - 8 * 60 * 1000)), // 8 mins ago
+        },
+        {
+          id: nanoid(),
+          fromPhone: user1.number,
+          toPhone: user2.number,
+          message: "Same here. It's challenging but exciting. Coffee soon!",
+          status: "delivered",
+          type: "text",
+          time: formatTime(new Date(Date.now() - 5 * 60 * 1000)), // 5 mins ago
+        },
+      ],
+    });
+
+    // Conversation 2: Between User 3 and User 4
+    await prisma.chats.createMany({
+      data: [
+        {
+          id: nanoid(),
+          fromPhone: user3.number,
+          toPhone: user4.number,
+          message: "Did you review the document I sent?",
+          status: "seen",
+          type: "text",
+          time: formatTime(new Date(Date.now() - 20 * 60 * 1000)), // 20 mins ago
+        },
+        {
+          id: nanoid(),
+          fromPhone: user4.number,
+          toPhone: user3.number,
+          message: "Yes, just finished. Left a few comments for you.",
+          status: "pending", // Simulates an offline message
+          type: "text",
+          time: formatTime(new Date()), // Now
+        },
+      ],
     });
   }
-
-  console.log("Created P2P transactions and updated balances");
-
-  console.log("Seeding finished. Seeded password (plaintext):", seedPassword);
+  console.log("✅ Chat conversations created.");
+  console.log(`✨ Seeding finished successfully! Default password: ${seedPassword}`);
 }
 
 main()
-  .catch((err) => {
-    console.error("Seed failed:", err);
+  .catch((e) => {
+    console.error("❌ Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {

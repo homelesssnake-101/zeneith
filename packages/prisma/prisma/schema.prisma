@@ -5,36 +5,30 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
-
-
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String?  @unique
-  name        String? 
-  number      String  @unique
-  password    String
-  balance     Balance[]
-  onRampTransactions OnRampTransaction[]     
-
-  sentP2PTransactions P2PTransaction[] @relation("sentP2PTransactions")
-  receivedP2PTransactions P2PTransaction[] @relation("receivedP2PTransactions")
-  imageUrl  String? 
-
-  sentchats chats[] @relation("sentchats")
-  receivedchats chats[] @relation("receivedchats")
-
-  friends User[] @relation("friends")
-  friendsof User[] @relation("friends")
-
-
+  id                      Int                 @id @default(autoincrement())
+  email                   String?             @unique
+  name                    String?
+  number                  String              @unique
+  password                String
+  balance                 Balance[]
+  onRampTransactions      OnRampTransaction[]
+  sentP2PTransactions     P2PTransaction[]    @relation("sentP2PTransactions")
+  receivedP2PTransactions P2PTransaction[]    @relation("receivedP2PTransactions")
+  imageUrl                String?
+  sentchats               chats[]             @relation("sentchats")
+  receivedchats           chats[]             @relation("receivedchats")
+  friends                 User[]              @relation("friends")
+  friendsof               User[]              @relation("friends")
 }
 
 enum ChatType {
@@ -42,64 +36,64 @@ enum ChatType {
   image
 }
 
-model chats{
-  id Int @id @default(autoincrement())
-  sendernumber String 
-  sender User @relation("sentchats",fields: [sendernumber], references: [number])
-  receivernumber String
-  receiver User @relation("receivedchats",fields: [receivernumber], references: [number])
-  message String?
-  imageUrl String?
+model chats {
+  id           String   @id @unique
+  toPhone      String
+  fromPhone    String
+  sender       User     @relation("sentchats", fields: [fromPhone], references: [number])
+  receiver     User     @relation("receivedchats", fields: [toPhone], references: [number])
+  message      String?
+  imageUrl     String?
   imageCaption String?
-  type ChatType @default(text)
-  timestamp DateTime @default(now())
-  delivered Boolean @default(false)
-  
-  @@index([sendernumber, receivernumber,timestamp])
+  timestamp   DateTime @default(now())
+  time         String 
+  status       String   @default("pending")
+  type         String
+
+  @@index([fromPhone, toPhone, timestamp])
 }
 
 model Merchant {
-  id          Int     @id @default(autoincrement())
-  email       String  @unique
-  name        String?
-  auth_type   AuthType   
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  auth_type AuthType
 }
 
 model OnRampTransaction {
-  id        Int          @id @default(autoincrement())
-  status    OnRampStatus
-  token     String       @unique
-  provider  String
-  amount    Int
-  startTime DateTime
-  userNumber   String
-  user      User         @relation(fields: [userNumber], references: [number])
-  @@index([startTime])
-}
-model P2PTransaction {
-  id        Int          @id @default(autoincrement())
-  status    OnRampStatus
-  token     String       @unique
-  
-  amount    Int
-  startTime DateTime
-  sentuserNumber    String
-  note String?
-  receiveduserNumber    String
-  sentuser      User         @relation("sentP2PTransactions",fields: [sentuserNumber], references: [number])
-  receiveduser      User         @relation("receivedP2PTransactions",fields: [receiveduserNumber], references: [number])
-  
+  id         Int          @id @default(autoincrement())
+  status     OnRampStatus
+  token      String       @unique
+  provider   String
+  amount     Int
+  startTime  DateTime
+  userNumber String
+  user       User         @relation(fields: [userNumber], references: [number])
+
   @@index([startTime])
 }
 
+model P2PTransaction {
+  id                 Int          @id @default(autoincrement())
+  status             OnRampStatus
+  token              String       @unique
+  amount             Int
+  startTime          DateTime
+  sentuserNumber     String
+  note               String?
+  receiveduserNumber String
+  sentuser           User         @relation("sentP2PTransactions", fields: [sentuserNumber], references: [number])
+  receiveduser       User         @relation("receivedP2PTransactions", fields: [receiveduserNumber], references: [number])
+
+  @@index([startTime])
+}
 
 model Balance {
-  id     Int  @id @default(autoincrement())
-  userNumber String  @unique
-  amount Int
-  locked Int
-  user  User @relation(fields: [userNumber], references: [number])
-
+  id         Int    @id @default(autoincrement())
+  userNumber String @unique
+  amount     Int
+  locked     Int
+  user       User   @relation(fields: [userNumber], references: [number])
 }
 
 enum AuthType {

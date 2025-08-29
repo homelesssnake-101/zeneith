@@ -10,6 +10,7 @@
   "exports": {
     "./styles.css": "./dist/index.css",
     "./package.json": "./package.json",
+    "./actions/chat": "./actions/chat",
     "./*": "./src/*.tsx",
     "./styles/global.css": "./src/styles/global.css"
   },
