@@ -16,14 +16,13 @@ const io = new Server(httpServer, {
 
 export const userSocketMap: Record<string, string> = {};
 
-// Define a more specific type for the incoming message data from the client
 interface MessageData {
   id: string;
   toPhone: string;
   fromPhone: string;
   message: string;
   type: string;
-  timestamp: Date; // This is the correct ISO-8601 timestamp
+  timestamp: Date;
   time: string;
   imageUrl?: string;
   imageCaption?: string;
@@ -35,25 +34,60 @@ io.on("connection", (socket) => {
   socket.on("register", (phone: string) => {
     if (phone) {
       userSocketMap[phone] = socket.id;
-      console.log(`User ${phone} registered with socket ID ${socket.id}`);
+      console.log(`✅ User ${phone} registered with socket ID ${socket.id}`);
+      console.log("📋 Current online users:", Object.keys(userSocketMap));
+
+      io.emit("user-status", {number: phone, status: "online"});
     }
   });
 
-  // ✅ FIX: Correctly handle the incoming message data
-  socket.on("message", async (data: MessageData) => {
+  socket.on("delivered", (data: MessageData) => {
+    const senderSocketId = userSocketMap[data.fromPhone];
     
+    if(senderSocketId){
+      console.log("Emitting ack-delivered to", senderSocketId);
+      io.to(senderSocketId).emit("ack-delivered", data);
+    }
+  });
+
+  socket.on("online", (data: {number: string, sender: string}) => {
+    console.log(`🔍 Online check request from ${data.sender} asking about ${data.number}`);
+    
+    const senderSocketId = userSocketMap[data.sender];
+    const receiverSocketId = userSocketMap[data.number];
+    const online = !!receiverSocketId; // Convert to boolean
+    
+    console.log(`📱 ${data.number} socket ID:`, receiverSocketId || "NOT FOUND");
+    console.log(`👤 ${data.number} is ${online ? "ONLINE" : "OFFLINE"}`);
+    console.log("📋 All registered users:", Object.keys(userSocketMap));
+    
+    if(senderSocketId){
+      const responseData = {number: data.number, online: online};
+      console.log("📤 Sending online status response:", responseData);
+      io.to(senderSocketId).emit("online", responseData);
+    } else {
+      console.log("❌ Sender socket not found for:", data.sender);
+    }
+  });
+
+
+
+ 
+
+
+
+  socket.on("message", async (data: MessageData) => {
     try {
-      // 1. Create the message in the DB using specific fields, not ...data
       const createdMessage = await prisma.chats.create({
         data: {
-          id: data.id, // 2. Use the ID from the client for consistency
+          id: data.id,
           toPhone: data.toPhone,
           fromPhone: data.fromPhone,
           message: data.message,
           type: data.type,
           imageUrl: data.imageUrl,
           imageCaption: data.imageCaption,
-          timestamp: data.timestamp, // 3. Use the correct ISO timestamp field
+          timestamp: data.timestamp,
           time: data.time,
           status: "pending",
         },
@@ -61,10 +95,6 @@ io.on("connection", (socket) => {
 
       const recipientSocketId = userSocketMap[data.toPhone];
       if (recipientSocketId) {
-        // Recipient is online, emit the message
-
-
-        // Update status to 'delivered' and notify the sender
         const deliveredMessage = await prisma.chats.update({
           where: { id: createdMessage.id },
           data: { status: "delivered" },
@@ -72,8 +102,7 @@ io.on("connection", (socket) => {
 
         const senderSocketId = userSocketMap[data.fromPhone];
         if (senderSocketId) {
-            // Notify sender that the message was delivered
-            io.to(senderSocketId).emit("ack-delivered", deliveredMessage);
+          io.to(senderSocketId).emit("ack-delivered", deliveredMessage);
         }
         io.to(recipientSocketId).emit("message", createdMessage);
       }
@@ -82,29 +111,32 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("ack-seen", async (msg:MessageData) => {
+  socket.on("ack-seen", async (msg: MessageData) => {
     try {
-        const message = await prisma.chats.findUnique({ where: { id: msg.id } });
-        if (message) {
-            const updatedMessage = await prisma.chats.update({
-                where: { id: msg.id },
-                data: { status: "seen" },
-            });
-            const senderSocketId = userSocketMap[message.fromPhone];
-            if (senderSocketId) {
-                io.to(senderSocketId).emit("ack-seen", updatedMessage);
-            }
+      const message = await prisma.chats.findUnique({ where: { id: msg.id } });
+      if (message) {
+        const updatedMessage = await prisma.chats.update({
+          where: { id: msg.id },
+          data: { status: "seen" },
+        });
+        const senderSocketId = userSocketMap[message.fromPhone];
+        if (senderSocketId) {
+          io.to(senderSocketId).emit("ack-seen", updatedMessage);
         }
+      }
     } catch(error){
-        console.error("Failed to process ack-seen:", error);
+      console.error("Failed to process ack-seen:", error);
     }
   });
 
   socket.on("disconnect", () => {
+    console.log("User disconnecting:", socket.id);
     for (const phone in userSocketMap) {
       if (userSocketMap[phone] === socket.id) {
+        io.emit("user-status", {number: phone, status: "offline"});
         delete userSocketMap[phone];
-        console.log(`User ${phone} disconnected`);
+        console.log(`❌ User ${phone} disconnected and removed from online users`);
+        console.log("📋 Remaining online users:", Object.keys(userSocketMap));
         break;
       }
     }

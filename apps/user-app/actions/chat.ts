@@ -22,3 +22,26 @@ export async function getChats(personNumber:string){
         },
     });
 }
+
+export async function delivered(toPhone:string){
+   const updatedChats =  await prisma.$transaction(async (tx) => {
+              
+              const pending = await tx.chats.findMany({
+                where: { toPhone: toPhone, status: "pending" },
+              });
+              
+          
+              if (pending.length > 0) {
+                await tx.chats.updateMany({
+                  where: { id: { in: pending.map((m) => m.id) } },
+                  data: { status: "delivered" },
+                });
+              }
+
+              console.log(pending + "pending chats");
+          
+              return pending.map((m) => ({ ...m, status: "delivered" }));
+            });
+
+    return updatedChats;
+}
