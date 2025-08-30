@@ -39,11 +39,15 @@ export default function ChatCard({
   setMessageclicked,
   online,
   setOnline,
+  setQuery,
+  setFriendRefresh,
 }: {
   person: any;
   setMessageclicked: (clicked: boolean) => void;
   online: boolean;
   setOnline: (online: boolean) => void;
+  setQuery: (query: string) => void;
+  setFriendRefresh: (refresh: boolean | ((prev: boolean) => boolean)) => void;
 }) {
   const recipient = person || {
     id: 2,
@@ -203,7 +207,7 @@ export default function ChatCard({
         <button className="p-2 rounded-full hover:bg-gray-200 transition mr-3">
           <ArrowLeft
             className="h-6 w-6 text-gray-600"
-            onClick={() => setMessageclicked(false)}
+            onClick={() => {setMessageclicked(false); setFriendRefresh((prev) => !prev)  }}
           />
         </button>
         <img

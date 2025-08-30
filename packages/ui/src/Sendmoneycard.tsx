@@ -8,8 +8,9 @@ import { io } from "socket.io-client";
 
 
 
-export const SendMoneyCard = ({ onSendMoney,setPeople,setRefresh, onAddFriend,people,query,setQuery, loading,setLoading }: { onSendMoney: (person: any) => void; onAddFriend: (to: string) => Promise<"error"|"success">; people: any[]; query:string|undefined ; setQuery: (query: string) => void ; setPeople: (people: any[]) => void ;setRefresh: (refresh: boolean| ((prev: boolean) => boolean)) => void;loading:boolean,setLoading:(loading:boolean)=>void}) => {
+export const SendMoneyCard = ({ onSendMoney,setFriendRefresh,setPeople,setRefresh, onAddFriend,people,query,setQuery, loading,setLoading }: { onSendMoney: (person: any) => void; onAddFriend: (to: string) => Promise<"error"|"success">; people: any[]; query:string|undefined ; setQuery: (query: string) => void ; setPeople: (people: any[]) => void ;setRefresh: (refresh: boolean| ((prev: boolean) => boolean)) => void; setFriendRefresh: (refresh: boolean| ((prev: boolean) => boolean)) => void;loading:boolean,setLoading:(loading:boolean)=>void}) => {
  
+
     
     
 useEffect(() => {
@@ -64,6 +65,8 @@ useEffect(() => {
                         
                         <PersonListItem
                         setRefresh={setRefresh}
+                        setFriendRefresh={setFriendRefresh}
+                         setQuery={setQuery}
                 
                             key={person.id}
                             person={person}

@@ -13,12 +13,16 @@ export const PersonListItem = ({
   onSendMoney,
   onMessage, // <-- add handler for message
   setRefresh,
+  setQuery,
+  setFriendRefresh,
 }: {
   person: any;
   onAddFriend: (to: string) => Promise<"error" | "success">;
   onSendMoney: (person: any) => void;
   onMessage?: (person: any) => void;
   setRefresh: (refresh: boolean | ((prev: boolean) => boolean)) => void;
+  setQuery: (query: string) => void;
+  setFriendRefresh: (refresh: boolean | ((prev: boolean) => boolean)) => void;
 }) => {
   const [friendRequest, setFriendRequest] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -154,6 +158,8 @@ export const PersonListItem = ({
       )}
       {messageclicked && (
         <ChatCard
+          setQuery={setQuery}
+          setFriendRefresh={setFriendRefresh}
           person={person}
           online={online}
           setOnline={setOnline}

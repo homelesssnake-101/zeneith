@@ -17,6 +17,7 @@ export default function P2P() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState<string>('');
+    const [friendrefresh,setFriendRefresh] = useState(false);
     const dispatch = useDispatch(); 
     const mobileRowSpan =
   people.length === 0 || people.length <= 2 ? "max-sm:row-span-3":
@@ -49,7 +50,7 @@ useEffect(() => {
         };
      fx();
     }
- }, [query]);
+ }, [query,friendrefresh]);
 
     return (
         <div className=" h-[calc(100vh-100px)] max-sm:h-[calc(100vh-64px)] grid mx-20  max-sm:mx-2 max-sm:ml-14 grid-cols-3 max-sm:grid-cols-1 grid-rows-8 max-sm:grid-rows-10 gap-6 max-sm:gap-1 items-start "> 
@@ -61,7 +62,7 @@ useEffect(() => {
             
         </div>
         <div className={`col-span-2 max-sm:col-span-1   justify-center items-center h-full w-[100%]  col-start-1  row-start-2 row-span-7 ${mobileRowSpan}`}>
-            <SendMoneyCard loading={loading} setLoading={setLoading} setRefresh={setRefresh} query={query} setQuery={setQuery} setPeople={setPeople} onSendMoney={() => {}} onAddFriend={ addFriend} people={people} />
+            <SendMoneyCard loading={loading} setLoading={setLoading} setRefresh={setRefresh} setFriendRefresh={setFriendRefresh} query={query} setQuery={setQuery} setPeople={setPeople} onSendMoney={() => {}} onAddFriend={ addFriend} people={people} />
         </div>
         <div className={`col-span-1 max-sm:col-span-1  min-h-auto justify-center items-center h-full w-[100%] col-start-3 max-sm:col-start-1  row-span-7 max-sm:row-span-4 `}>
             <TransactionsCard mode="p2p" loading={transactionsloading} transactions={transactions} setRefresh={setRefresh} />
