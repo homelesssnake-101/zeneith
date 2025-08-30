@@ -32,33 +32,34 @@ export const PersonListItem = ({
   const { data: session } = useSession();
   const user = session?.user as any;
   const socket = useSocket();
+
+  const [lastMessageFrom, setLastMessageFrom] = useState(person.lastMessageFrom);
+  const [lastMessageStatus, setLastMessageStatus] = useState(person.lastMessageStatus);
+  const [lastMessage, setLastMessage] = useState(person.lastMessage);
+  
   useEffect(() => {
-
-    
-      socket?.emit("online", { number: person.number, sender: user?.number as string });
-
-
+    socket?.emit("online", { number: person.number, sender: user?.number as string });
 
     const handleuserStatus = (data: { number: string; status: string }) => {
       if (data.number === person.number) {
         setOnline(data.status === "online");
       }
     };
+
     const handleOnline = (data: { number: string; online: boolean }) => {
-      console.log("Online status received:", data);
       if (data.number === person.number) {
         setOnline(data.online);
-        console.log("Setting online status for", person.number, "to", data.online);
       }
     };
+
     socket?.on("user-status", handleuserStatus);
     socket?.on("online", handleOnline);
+
     return () => {
       socket?.off("user-status", handleuserStatus);
       socket?.off("online", handleOnline);
-      
     };
-  }, [socket, person.number,user]);
+  }, [socket, person.number, user]);
 
   return (
     <AnimatePresence key={person.id}>
@@ -69,7 +70,6 @@ export const PersonListItem = ({
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-4 p-3 max-sm:p-2 max-sm:gap-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
         >
-          {/* START OF CHANGE */}
           <motion.div className="relative flex-shrink-0">
             <motion.img
               layoutId={person.id + "image"}
@@ -88,25 +88,39 @@ export const PersonListItem = ({
               title={online ? "Online" : "Offline"}
             />
           </motion.div>
-          {/* END OF CHANGE */}
           <div className="flex-1">
             <motion.p
               layoutId={person.id + "name"}
               className="font-semibold text-gray-800 textmsm max-sm:text-xs"
             >
-              <motion.span className="block">
-                <motion.span>{person.name}</motion.span>
-              </motion.span>
+              {person.name}
             </motion.p>
-            <motion.p
-              layoutId={person.id + "number"}
-              className="text-xs text-gray-500 max-sm:text-xs"
-            >
-              <motion.span className="block">
-                <motion.span>{person.number}</motion.span>
-              </motion.span>
-            </motion.p>
+            {lastMessage && (
+              <motion.div className="flex items-center justify-between text-xs text-gray-500 max-sm:text-xs">
+                <div className="flex items-center gap-1">
+                  {lastMessageFrom === "You" && <div>You: </div>}
+                  <p className={`${lastMessageStatus !== "sent"&&lastMessageFrom !== "You" ? "font-bold text-indigo-500" : ""}`}>{lastMessage}</p>
+                </div>
+                <p className="ml-2 ">
+                  {new Date(person.lastMessageTimestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </motion.div>
+            )}
+            {!lastMessage && (
+              <motion.p
+                layoutId={person.id + "number"}
+                className="text-xs text-gray-500 max-sm:text-xs"
+              >
+                {person.number}
+              </motion.p>
+            )}
           </div>
+          {lastMessageFrom !== "You" && (
+            <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full"></div>
+          )}
 
           {person.isFriend ? (
             <div className="flex items-center gap-2">
@@ -117,7 +131,6 @@ export const PersonListItem = ({
               >
                 <Send size={20} />
               </button>
-
               <button
                 onClick={() => setMessageclicked(true)}
                 className="p-2 rounded-full hover:bg-blue-100 text-blue-500"

@@ -120,12 +120,12 @@ export const getFriends = async () => {
     });
 
     // 3. Create a map of the latest chat timestamp for each person
-    const lastMessageTimestamps = new Map<string, {time: Date,message: string}>();
+    const lastMessageTimestamps = new Map<string, {time: Date,message: string,fromPhone: string,status: string}>();
     for (const chat of chats) {
       const otherUserNumber =
         chat.fromPhone === user.number ? chat.toPhone : chat.fromPhone;
       if (!lastMessageTimestamps.has(otherUserNumber)) {
-        lastMessageTimestamps.set(otherUserNumber, {time: chat.timestamp,message: chat.message ?? ""});
+        lastMessageTimestamps.set(otherUserNumber, {time: chat.timestamp,message: chat.message ?? "",fromPhone: chat.fromPhone,status: chat.status});
       }
     }
 
@@ -135,6 +135,8 @@ export const getFriends = async () => {
       isFriend: true,
       lastMessageTimestamp: lastMessageTimestamps.get(friend.number)?.time || new Date(0),
       lastMessage: lastMessageTimestamps.get(friend.number)?.message ?? "",
+      lastMessageFrom: lastMessageTimestamps.get(friend.number)?.fromPhone === user.number ? "You" : lastMessageTimestamps.get(friend.number)?.fromPhone ?? "",
+      lastMessageStatus: lastMessageTimestamps.get(friend.number)?.status ?? "",
     }));
 
     // 5. Sort the final list
